@@ -101,6 +101,12 @@
     return round;
   }
 
+  // 한 문항의 점수. 틀리면 0, 힌트를 쓰고 맞히면 0.5, 그냥 맞히면 1.
+  function scoreFor(mode, isCorrect, hintUsed) {
+    if (!isCorrect) return 0;
+    return hintUsed ? 0.5 : 1;
+  }
+
   // ----------------------------------------------------------------- 화면 층
 
   function el(id) {
@@ -221,6 +227,9 @@
       button.className = 'choice';
       button.textContent = q.choices[i];
       button.setAttribute('data-index', String(i));
+      (function (index) {
+        button.addEventListener('click', function () { selectChoice(index); });
+      })(i);
       li.appendChild(button);
       list.appendChild(li);
     }
@@ -229,6 +238,67 @@
     var box = document.createElement('div');
     box.id = 'feedback';
     root.appendChild(box);
+  }
+
+  function selectChoice(i) {
+    if (state.answered) return;
+    var q = currentQuestion();
+    if (!q) return;
+    state.answered = true;
+    var isCorrect = i === q.answerIndex;
+    state.score += scoreFor(state.mode, isCorrect, state.hintUsed);
+    if (!isCorrect) state.wrongIds.push(q.id);
+    renderFeedback(i, isCorrect);
+  }
+
+  function renderFeedback(chosen, isCorrect) {
+    var q = currentQuestion();
+    var root = el('screen-quiz');
+    if (!q || !root) return;
+
+    var buttons = root.querySelectorAll('.choice');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].disabled = true;
+      if (i === q.answerIndex) buttons[i].classList.add('correct');
+      else if (i === chosen) buttons[i].classList.add('wrong');
+    }
+
+    var box = el('feedback');
+    if (!box) return;
+    box.innerHTML = '';
+
+    var verdict = document.createElement('p');
+    verdict.className = 'verdict ' + (isCorrect ? 'correct' : 'wrong');
+    if (chosen === -1) verdict.textContent = 'X 시간 초과';
+    else verdict.textContent = (isCorrect ? 'O 정답' : 'X 오답');
+    box.appendChild(verdict);
+
+    var explain = document.createElement('p');
+    explain.className = 'explanation';
+    explain.textContent = q.explanation;
+    box.appendChild(explain);
+
+    var src = document.createElement('p');
+    src.className = 'source';
+    if (q.sourceUrl) {
+      var link = document.createElement('a');
+      link.href = q.sourceUrl;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = q.source;
+      src.appendChild(document.createTextNode('출처: '));
+      src.appendChild(link);
+    } else {
+      src.textContent = '출처: ' + q.source;
+    }
+    box.appendChild(src);
+
+    var next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'next';
+    next.textContent = (state.index === state.questions.length - 1) ? '결과 보기' : '다음';
+    next.addEventListener('click', function () { nextQuestion(); });
+    box.appendChild(next);
   }
 
   // -------------------------------------------------------------- 자체 점검
@@ -285,6 +355,13 @@
       var before = JSON.stringify(QUIZ_DATA);
       buildRound('science');
       return JSON.stringify(QUIZ_DATA) === before;
+    });
+
+    check('연습 모드에서 맞히면 1점이다', function () {
+      return scoreFor('practice', true, false) === 1;
+    });
+    check('연습 모드에서 틀리면 0점이다', function () {
+      return scoreFor('practice', false, false) === 0;
     });
 
     console.log('자체 점검 결과: 통과 ' + pass + ', 실패 ' + fail);

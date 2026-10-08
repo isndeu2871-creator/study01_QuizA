@@ -105,3 +105,39 @@ button:disabled {
   padding: 0;
   list-style: none;
 }
+
+.choice.correct {
+  background: var(--correct-bg);
+  border-color: var(--correct-fg);
+  color: var(--correct-fg);
+  font-weight: 600;
+}
+
+.choice.wrong {
+  background: var(--wrong-bg);
+  border-color: var(--wrong-fg);
+  color: var(--wrong-fg);
+}
+
+/* 해설 */
+#feedback { margin-top: 16px; }
+
+.verdict {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.verdict.correct { color: var(--correct-fg); }
+.verdict.wrong { color: var(--wrong-fg); }
+
+.explanation { margin: 0 0 6px; }
+
+.source {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.source a { color: var(--accent); }
+
+button.next { margin-top: 4px; text-align: center; }
