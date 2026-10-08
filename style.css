@@ -1,0 +1,85 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #666666;
+  --line: #d6d6d6;
+  --accent: #1d4ed8;
+  --correct-bg: #e7f6ec;
+  --correct-fg: #176b35;
+  --wrong-bg: #fdeaea;
+  --wrong-fg: #a32020;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, "Malgun Gothic", sans-serif;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.app-title {
+  font-size: 1.25rem;
+  margin: 8px 0 16px;
+}
+
+.screen.hidden { display: none; }
+
+/* 시작 화면 */
+.notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.notice.error {
+  border-color: var(--wrong-fg);
+  color: var(--wrong-fg);
+}
+
+.category-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.category-item { display: grid; gap: 4px; }
+
+.category-reason {
+  color: var(--wrong-fg);
+  font-size: 0.85rem;
+}
+
+button {
+  font: inherit;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) { border-color: var(--accent); }
+
+button:disabled {
+  color: var(--muted);
+  background: #f4f4f4;
+  cursor: not-allowed;
+}
