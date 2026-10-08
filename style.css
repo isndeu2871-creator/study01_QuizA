@@ -1,13 +1,17 @@
 :root {
-  --bg: #ffffff;
-  --fg: #1a1a1a;
-  --muted: #666666;
-  --line: #d6d6d6;
-  --accent: #1d4ed8;
-  --correct-bg: #e7f6ec;
-  --correct-fg: #176b35;
-  --wrong-bg: #fdeaea;
-  --wrong-fg: #a32020;
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --fg: #1f2330;
+  --muted: #6b7280;
+  --line: #e2e5ec;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --correct-bg: #eaf7ee;
+  --correct-line: #46a35e;
+  --correct-fg: #1f7a3d;
+  --wrong-bg: #fdecec;
+  --wrong-line: #e06363;
+  --wrong-fg: #c0392b;
 }
 
 * { box-sizing: border-box; }
@@ -16,114 +20,143 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: system-ui, "Malgun Gothic", sans-serif;
+  font-family: system-ui, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   line-height: 1.6;
   word-break: keep-all;
 }
 
 #app {
-  max-width: 640px;
+  max-width: 620px;
   margin: 0 auto;
-  padding: 16px;
-}
-
-.app-title {
-  font-size: 1.25rem;
-  margin: 8px 0 16px;
+  padding: 32px 16px 48px;
 }
 
 .screen.hidden { display: none; }
 
-/* 시작 화면 */
-.notice {
-  margin: 0 0 16px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+h1.title {
+  margin: 0 0 6px;
+  font-size: 1.9rem;
+  letter-spacing: -0.02em;
+}
+
+p.subtitle {
+  margin: 0 0 24px;
   color: var(--muted);
-  font-size: 0.9rem;
 }
 
-.notice.error {
-  border-color: var(--wrong-fg);
-  color: var(--wrong-fg);
-}
-
-.category-list {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.category-item { display: grid; gap: 4px; }
-
-.category-reason {
-  color: var(--wrong-fg);
-  font-size: 0.85rem;
-}
-
+/* 공통 버튼 */
 button {
   font: inherit;
+  display: block;
   width: 100%;
-  padding: 12px 14px;
+  margin: 0 0 12px;
+  padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
+  border-radius: 10px;
+  background: var(--card);
   color: var(--fg);
-  text-align: left;
+  text-align: center;
   cursor: pointer;
 }
 
 button:hover:not(:disabled) { border-color: var(--accent); }
 
-button:disabled {
+button:disabled { cursor: default; }
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.primary:hover { background: var(--accent-strong); }
+
+button.ghost {
+  background: transparent;
+  border-color: transparent;
   color: var(--muted);
-  background: #f4f4f4;
-  cursor: not-allowed;
+}
+
+.reason {
+  margin: -6px 0 12px;
+  color: var(--wrong-fg);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.notice {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.notice.error { color: var(--wrong-fg); }
+
+/* 모드 선택 */
+.mode-rule {
+  margin: -6px 0 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 /* 퀴즈 화면 */
 .quiz-head {
-  margin: 0 0 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 18px;
   color: var(--muted);
-  font-size: 0.9rem;
-  white-space: pre-wrap;
+  font-size: 0.95rem;
 }
+
+.quiz-head .timer.urgent { color: var(--wrong-fg); font-weight: 700; }
 
 .question {
-  margin: 0 0 16px;
-  font-size: 1.05rem;
-  font-weight: 600;
+  margin: 0 0 18px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
-.choice-list {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
+.choice-list { margin: 0; padding: 0; list-style: none; }
 
-.choice.correct {
+button.choice { text-align: left; }
+
+button.choice:disabled { color: var(--muted); }
+
+button.choice.correct {
   background: var(--correct-bg);
-  border-color: var(--correct-fg);
+  border-color: var(--correct-line);
   color: var(--correct-fg);
-  font-weight: 600;
 }
 
-.choice.wrong {
+button.choice.wrong {
   background: var(--wrong-bg);
-  border-color: var(--wrong-fg);
+  border-color: var(--wrong-line);
   color: var(--wrong-fg);
 }
 
-/* 해설 */
-#feedback { margin-top: 16px; }
+button.choice.removed {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.tag { margin-left: 8px; font-weight: 700; }
+
+/* 해설 카드 */
+.feedback-card {
+  margin-top: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
 
 .verdict {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+  font-size: 1.05rem;
   font-weight: 700;
 }
 
@@ -133,36 +166,79 @@ button:disabled {
 .explanation { margin: 0 0 6px; }
 
 .source {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
 }
 
 .source a { color: var(--accent); }
 
-button.next { margin-top: 4px; text-align: center; }
+.feedback-card button { margin-bottom: 0; }
 
 /* 결과 화면 */
 .result-score {
-  margin: 0 0 12px;
-  font-size: 1.6rem;
+  margin: 0 0 4px;
+  font-size: 2rem;
   font-weight: 700;
 }
 
-.wrong-list {
-  display: grid;
-  gap: 16px;
-  margin: 0 0 16px;
-  padding: 0;
-  list-style: none;
-}
+.retry-note { margin: 0 0 18px; color: var(--muted); font-size: 0.9rem; }
+
+.wrong-list { margin: 0 0 20px; padding: 0; list-style: none; }
 
 .wrong-list li {
-  padding: 12px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
+  background: var(--card);
 }
 
 .wrong-list p { margin: 0 0 4px; }
+.wrong-list .question { font-size: 1rem; margin-bottom: 8px; }
 
-#screen-result button { margin-top: 8px; text-align: center; }
+/* 순위표 */
+.board-group { margin-bottom: 24px; }
+
+.board-group h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.92rem;
+}
+
+th, td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+
+.name-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.name-row input {
+  font: inherit;
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--fg);
+}
+
+.name-row button { width: auto; white-space: nowrap; margin: 0; }
