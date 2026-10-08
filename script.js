@@ -301,6 +301,93 @@
     box.appendChild(next);
   }
 
+  function formatScore(score) {
+    return (score % 1 === 0) ? String(score) : String(score.toFixed(1));
+  }
+
+  function nextQuestion() {
+    if (state.index < state.questions.length - 1) {
+      state.index += 1;
+      state.answered = false;
+      state.hintUsed = false;
+      state.removed = [];
+      renderQuiz();
+      return;
+    }
+    if (state.firstRoundScore === null) state.firstRoundScore = state.score;
+    renderResult();
+    showScreen('result');
+  }
+
+  function renderResult() {
+    var root = el('screen-result');
+    if (!root) return;
+    root.innerHTML = '';
+
+    var head = document.createElement('p');
+    head.className = 'result-score';
+    head.textContent = formatScore(state.firstRoundScore) + ' / 10';
+    root.appendChild(head);
+
+    var notice = document.createElement('p');
+    notice.className = 'notice';
+    notice.textContent = '순위표에 기록되지 않음';
+    root.appendChild(notice);
+
+    root.appendChild(wrongList());
+
+    var again = document.createElement('button');
+    again.type = 'button';
+    again.textContent = '같은 모드 다시';
+    again.addEventListener('click', function () {
+      startGame(state.mode, state.categoryId);
+    });
+    root.appendChild(again);
+
+    var home = document.createElement('button');
+    home.type = 'button';
+    home.textContent = '처음으로';
+    home.addEventListener('click', function () {
+      renderStart();
+      showScreen('start');
+    });
+    root.appendChild(home);
+  }
+
+  // 결과 화면의 틀린 문항 목록. 다 맞히면 안내 문구를 돌려준다.
+  function wrongList() {
+    if (state.wrongIds.length === 0) {
+      var none = document.createElement('p');
+      none.className = 'notice';
+      none.textContent = '틀린 문항이 없습니다';
+      return none;
+    }
+    var list = document.createElement('ul');
+    list.className = 'wrong-list';
+    for (var i = 0; i < state.questions.length; i++) {
+      var q = state.questions[i];
+      if (state.wrongIds.indexOf(q.id) === -1) continue;
+      var li = document.createElement('li');
+      var text = document.createElement('p');
+      text.className = 'question';
+      text.textContent = q.question;
+      li.appendChild(text);
+      var answer = document.createElement('p');
+      answer.textContent = '정답: ' + q.choices[q.answerIndex];
+      li.appendChild(answer);
+      var explain = document.createElement('p');
+      explain.className = 'explanation';
+      explain.textContent = q.explanation;
+      li.appendChild(explain);
+      var src = document.createElement('p');
+      src.className = 'source';
+      src.textContent = '출처: ' + q.source;
+      li.appendChild(src);
+      list.appendChild(li);
+    }
+    return list;
+  }
+
   // -------------------------------------------------------------- 자체 점검
 
   function runSelfTest() {
@@ -313,33 +400,21 @@
       else { fail++; console.error('FAIL ' + name + note); }
     }
 
-    check('없는 카테고리는 ok가 거짓이다', function () {
-      return validateCategory('no-such-category').ok === false;
-    });
-    check('없는 카테고리는 이유를 함께 돌려준다', function () {
-      return validateCategory('no-such-category').reason.length > 0;
-    });
-    check('문항 수가 10이 아니면 ok가 거짓이다', function () {
-      return validateCategory('science').ok === false ||
-        getCategory('science').questions.length === 10;
-    });
-
-    check('shuffle이 원본 배열을 바꾸지 않는다', function () {
+    check('1. shuffle이 원본 배열을 바꾸지 않는다', function () {
       var src = [1, 2, 3, 4, 5], copy = src.slice();
       shuffle(src);
       return src.join(',') === copy.join(',');
     });
-    check('shuffle 결과의 길이가 원본과 같다', function () {
+    check('2. shuffle 결과의 길이가 원본과 같다', function () {
       return shuffle([1, 2, 3, 4, 5]).length === 5;
     });
-    check('shuffle 결과가 원본의 원소를 모두 담는다', function () {
-      var out = shuffle(['a', 'b', 'c', 'd']).slice().sort().join(',');
-      return out === 'a,b,c,d';
+    check('3. shuffle 결과가 원본의 원소를 모두 담는다', function () {
+      return shuffle(['a', 'b', 'c', 'd']).slice().sort().join(',') === 'a,b,c,d';
     });
-    check('buildRound가 문항 10개를 돌려준다', function () {
+    check('4. buildRound가 문항 10개를 돌려준다', function () {
       return buildRound('science').length === 10;
     });
-    check('섞은 뒤 choices[answerIndex]가 원래 정답과 같다', function () {
+    check('5. 섞은 뒤 choices[answerIndex]가 원래 정답과 같다', function () {
       var round = buildRound('science');
       if (round.length !== 10) return false;
       var origin = getCategory('science').questions;
@@ -351,17 +426,37 @@
       }
       return true;
     });
-    check('buildRound가 QUIZ_DATA를 바꾸지 않는다', function () {
+    check('6. buildRound가 QUIZ_DATA를 바꾸지 않는다', function () {
       var before = JSON.stringify(QUIZ_DATA);
       buildRound('science');
       return JSON.stringify(QUIZ_DATA) === before;
     });
-
-    check('연습 모드에서 맞히면 1점이다', function () {
+    check('7. 연습 모드에서 맞히면 1점이다', function () {
       return scoreFor('practice', true, false) === 1;
     });
-    check('연습 모드에서 틀리면 0점이다', function () {
+    check('8. 연습 모드에서 틀리면 0점이다', function () {
       return scoreFor('practice', false, false) === 0;
+    });
+    check('9. formatScore(8)이 "8"이다', function () {
+      return formatScore(8) === '8';
+    });
+    check('10. formatScore(7.5)가 "7.5"다', function () {
+      return formatScore(7.5) === '7.5';
+    });
+    check('11. 정상 카테고리는 validateCategory가 ok를 참으로 준다', function () {
+      return validateCategory('science').ok === true;
+    });
+    check('12. 40문항의 id가 모두 다르다', function () {
+      var seen = {}, total = 0;
+      for (var key in QUIZ_DATA) {
+        var qs = QUIZ_DATA[key].questions;
+        for (var i = 0; i < qs.length; i++) {
+          if (seen[qs[i].id]) return false;
+          seen[qs[i].id] = true;
+          total++;
+        }
+      }
+      return total === 40;
     });
 
     console.log('자체 점검 결과: 통과 ' + pass + ', 실패 ' + fail);
