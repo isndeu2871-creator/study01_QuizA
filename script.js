@@ -25,6 +25,7 @@
     score: 0,
     firstRoundScore: null,
     wrongIds: [],
+    results: [],
     retryRight: 0,
     hintUsed: false,
     removed: [],
@@ -209,6 +210,7 @@
     if (!q) return;
     state.answered = true;
     state.wrongIds.push(q.id);
+    state.results.push({ id: q.id, outcome: 'timeout', hintUsed: false });
     renderFeedback(-1, false);
   }
 
@@ -313,6 +315,7 @@
     state.score = 0;
     state.firstRoundScore = null;
     state.wrongIds = [];
+    state.results = [];
     state.retryRight = 0;
     state.hintUsed = false;
     state.removed = [];
@@ -328,6 +331,7 @@
     state.index = 0;
     state.score = 0;
     state.wrongIds = [];
+    state.results = [];
     state.retryRight = 0;
     state.hintUsed = false;
     state.removed = [];
@@ -427,6 +431,7 @@
     state.score += scoreFor(state.mode, isCorrect, state.hintUsed);
     if (isCorrect) { if (state.isRetry) state.retryRight += 1; }
     else state.wrongIds.push(q.id);
+    state.results.push({ id: q.id, outcome: isCorrect ? 'correct' : 'wrong', hintUsed: state.hintUsed });
     renderFeedback(i, isCorrect);
   }
 
@@ -561,21 +566,36 @@
     return wrap;
   }
 
+  // 문항별 결과 목록. 맞힘·틀림·시간 초과와 힌트 사용을 함께 보여 준다.
+  function resultLabel(r) {
+    if (!r) return '';
+    if (r.outcome === 'timeout') return '시간 초과';
+    if (r.outcome === 'wrong') return '오답';
+    return r.hintUsed ? '정답 (힌트 0.5점)' : '정답';
+  }
+
   function wrongList() {
-    if (state.wrongIds.length === 0) {
-      return makeText('p', 'notice', '틀린 문항이 없습니다');
-    }
     var list = document.createElement('ul');
     list.className = 'wrong-list';
     for (var i = 0; i < state.questions.length; i++) {
       var q = state.questions[i];
-      if (state.wrongIds.indexOf(q.id) === -1) continue;
+      var r = null;
+      for (var j = 0; j < state.results.length; j++) if (state.results[j].id === q.id) r = state.results[j];
       var li = document.createElement('li');
+      var mark = resultLabel(r);
+      var tag = makeText('p', 'outcome ' + (r && r.outcome === 'correct' ? 'correct' : 'wrong'), mark);
+      li.appendChild(tag);
       li.appendChild(makeText('p', 'question', q.question));
       li.appendChild(makeText('p', '', '정답: ' + q.choices[q.answerIndex]));
       li.appendChild(makeText('p', 'explanation', q.explanation));
       li.appendChild(makeText('p', 'source', '출처: ' + q.source));
       list.appendChild(li);
+    }
+    if (state.wrongIds.length === 0) {
+      var wrap = document.createElement('div');
+      wrap.appendChild(makeText('p', 'notice', '틀린 문항이 없습니다'));
+      wrap.appendChild(list);
+      return wrap;
     }
     return list;
   }

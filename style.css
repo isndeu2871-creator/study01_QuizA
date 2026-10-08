@@ -242,3 +242,12 @@ tr:last-child td { border-bottom: none; }
 }
 
 .name-row button { width: auto; white-space: nowrap; margin: 0; }
+
+.outcome {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.outcome.correct { color: var(--correct-fg); }
+.outcome.wrong { color: var(--wrong-fg); }
