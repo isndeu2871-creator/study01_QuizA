@@ -83,3 +83,25 @@ button:disabled {
   background: #f4f4f4;
   cursor: not-allowed;
 }
+
+/* 퀴즈 화면 */
+.quiz-head {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.question {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.choice-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

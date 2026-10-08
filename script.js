@@ -5,6 +5,24 @@
   var CATEGORY_IDS = ['korean-history', 'world-geography', 'science', 'arts-culture'];
   var MODE_NAMES = { practice: '연습', speed: '스피드', hint: '힌트' };
 
+  // ------------------------------------------------------------------ 상태
+
+  var state = {
+    mode: 'practice',
+    categoryId: null,
+    questions: [],
+    index: 0,
+    score: 0,
+    firstRoundScore: null,
+    wrongIds: [],
+    hintUsed: false,
+    removed: [],
+    answered: false,
+    secondsLeft: 15,
+    timerId: null,
+    isRetry: false
+  };
+
   // ---------------------------------------------------------------- 데이터 층
 
   function hasData() {
@@ -38,6 +56,49 @@
       }
     }
     return { ok: true, reason: '' };
+  }
+
+  // 피셔-예이츠. 원본을 바꾸지 않고 섞인 새 배열을 돌려준다.
+  function shuffle(array) {
+    var out = array.slice();
+    for (var i = out.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = out[i];
+      out[i] = out[j];
+      out[j] = tmp;
+    }
+    return out;
+  }
+
+  // 판에 쓸 문항을 만든다. 문항 순서와 보기 순서를 섞고 answerIndex를 다시 계산한다.
+  // ids를 주면 그 id의 문항만 모은다. QUIZ_DATA는 고치지 않는다.
+  function buildRound(categoryId, ids) {
+    var cat = getCategory(categoryId);
+    if (!cat || !Array.isArray(cat.questions)) return [];
+    var picked = cat.questions;
+    if (Array.isArray(ids)) {
+      picked = [];
+      for (var i = 0; i < cat.questions.length; i++) {
+        if (ids.indexOf(cat.questions[i].id) !== -1) picked.push(cat.questions[i]);
+      }
+    }
+    var ordered = shuffle(picked);
+    var round = [];
+    for (var k = 0; k < ordered.length; k++) {
+      var q = ordered[k];
+      var answerText = q.choices[q.answerIndex];
+      var choices = shuffle(q.choices);
+      round.push({
+        id: q.id,
+        question: q.question,
+        choices: choices,
+        answerIndex: choices.indexOf(answerText),
+        explanation: q.explanation,
+        source: q.source,
+        sourceUrl: q.sourceUrl
+      });
+    }
+    return round;
   }
 
   // ----------------------------------------------------------------- 화면 층
@@ -93,7 +154,13 @@
     button.type = 'button';
     button.textContent = cat && cat.name ? cat.name : categoryId;
     button.setAttribute('data-category', categoryId);
-    if (!check.ok) button.disabled = true;
+    if (!check.ok) {
+      button.disabled = true;
+    } else {
+      button.addEventListener('click', function () {
+        startGame('practice', categoryId);
+      });
+    }
     item.appendChild(button);
 
     if (!check.ok) {
@@ -105,22 +172,120 @@
     return item;
   }
 
+  function startGame(mode, categoryId) {
+    state.mode = mode;
+    state.categoryId = categoryId;
+    state.questions = buildRound(categoryId);
+    state.index = 0;
+    state.score = 0;
+    state.firstRoundScore = null;
+    state.wrongIds = [];
+    state.hintUsed = false;
+    state.removed = [];
+    state.answered = false;
+    state.isRetry = false;
+    renderQuiz();
+    showScreen('quiz');
+  }
+
+  function currentQuestion() {
+    return state.questions[state.index] || null;
+  }
+
+  function renderQuiz() {
+    var root = el('screen-quiz');
+    if (!root) return;
+    root.innerHTML = '';
+    var q = currentQuestion();
+    if (!q) return;
+
+    var cat = getCategory(state.categoryId);
+    var head = document.createElement('p');
+    head.className = 'quiz-head';
+    head.textContent = (cat ? cat.name : state.categoryId) + ' · ' + MODE_NAMES[state.mode] +
+      '   ' + (state.index + 1) + ' / ' + state.questions.length +
+      '   점수 ' + state.score;
+    root.appendChild(head);
+
+    var text = document.createElement('p');
+    text.className = 'question';
+    text.textContent = q.question;
+    root.appendChild(text);
+
+    var list = document.createElement('ul');
+    list.className = 'choice-list';
+    for (var i = 0; i < q.choices.length; i++) {
+      var li = document.createElement('li');
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'choice';
+      button.textContent = q.choices[i];
+      button.setAttribute('data-index', String(i));
+      li.appendChild(button);
+      list.appendChild(li);
+    }
+    root.appendChild(list);
+
+    var box = document.createElement('div');
+    box.id = 'feedback';
+    root.appendChild(box);
+  }
+
   // -------------------------------------------------------------- 자체 점검
 
   function runSelfTest() {
     var pass = 0, fail = 0;
-    function check(name, ok) {
+    function check(name, fn) {
+      var ok = false, note = '';
+      try { ok = fn() === true; }
+      catch (e) { ok = false; note = ' (' + e.message + ')'; }
       if (ok) { pass++; console.log('PASS ' + name); }
-      else { fail++; console.error('FAIL ' + name); }
+      else { fail++; console.error('FAIL ' + name + note); }
     }
 
-    check('없는 카테고리는 ok가 거짓이다',
-      validateCategory('no-such-category').ok === false);
-    check('없는 카테고리는 이유를 함께 돌려준다',
-      validateCategory('no-such-category').reason.length > 0);
-    check('문항 수가 10이 아니면 ok가 거짓이다',
-      validateCategory('science').ok === false ||
-      getCategory('science').questions.length === 10);
+    check('없는 카테고리는 ok가 거짓이다', function () {
+      return validateCategory('no-such-category').ok === false;
+    });
+    check('없는 카테고리는 이유를 함께 돌려준다', function () {
+      return validateCategory('no-such-category').reason.length > 0;
+    });
+    check('문항 수가 10이 아니면 ok가 거짓이다', function () {
+      return validateCategory('science').ok === false ||
+        getCategory('science').questions.length === 10;
+    });
+
+    check('shuffle이 원본 배열을 바꾸지 않는다', function () {
+      var src = [1, 2, 3, 4, 5], copy = src.slice();
+      shuffle(src);
+      return src.join(',') === copy.join(',');
+    });
+    check('shuffle 결과의 길이가 원본과 같다', function () {
+      return shuffle([1, 2, 3, 4, 5]).length === 5;
+    });
+    check('shuffle 결과가 원본의 원소를 모두 담는다', function () {
+      var out = shuffle(['a', 'b', 'c', 'd']).slice().sort().join(',');
+      return out === 'a,b,c,d';
+    });
+    check('buildRound가 문항 10개를 돌려준다', function () {
+      return buildRound('science').length === 10;
+    });
+    check('섞은 뒤 choices[answerIndex]가 원래 정답과 같다', function () {
+      var round = buildRound('science');
+      if (round.length !== 10) return false;
+      var origin = getCategory('science').questions;
+      for (var i = 0; i < round.length; i++) {
+        var src = null;
+        for (var j = 0; j < origin.length; j++) if (origin[j].id === round[i].id) src = origin[j];
+        if (!src) return false;
+        if (round[i].choices[round[i].answerIndex] !== src.choices[src.answerIndex]) return false;
+      }
+      return true;
+    });
+    check('buildRound가 QUIZ_DATA를 바꾸지 않는다', function () {
+      var before = JSON.stringify(QUIZ_DATA);
+      buildRound('science');
+      return JSON.stringify(QUIZ_DATA) === before;
+    });
 
     console.log('자체 점검 결과: 통과 ' + pass + ', 실패 ' + fail);
   }
